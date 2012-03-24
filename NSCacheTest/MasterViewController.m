@@ -7,11 +7,14 @@
 //
 
 #import "MasterViewController.h"
+#import "ImageLoader.h"
 
-#import "DetailViewController.h"
+static NSString *INSTAGRAM_CLIENT_ID = @"";
 
 @interface MasterViewController () {
     NSMutableArray *_objects;
+    NSOperationQueue *_networkQueue;
+    NSOperationQueue *_reloadQueue;
 }
 @end
 
@@ -23,40 +26,38 @@
 {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
-        self.title = NSLocalizedString(@"Master", @"Master");
+        self.title = @"Instagram";
+        _networkQueue = [[NSOperationQueue alloc] init];
+        _reloadQueue = [[NSOperationQueue alloc] init];
+        _reloadQueue.maxConcurrentOperationCount = 1;
     }
     return self;
 }
 							
 - (void)viewDidLoad
 {
-    [super viewDidLoad];
-	// Do any additional setup after loading the view, typically from a nib.
-    self.navigationItem.leftBarButtonItem = self.editButtonItem;
+    [super viewDidLoad];    
 
-    UIBarButtonItem *addButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(insertNewObject:)];
-    self.navigationItem.rightBarButtonItem = addButton;
+    if (!INSTAGRAM_CLIENT_ID.length) {
+        @throw [NSException exceptionWithName:@"Instgram Client ID Not Found" reason:@"Get Instgram ID via http://instagr.am/developer/manage/" userInfo:nil];
+    }    
+    
+    UIBarButtonItem *loadButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh target:self action:@selector(loadPhotos)];
+    self.navigationItem.rightBarButtonItem = loadButton;
+
+    [self loadPhotos];
 }
 
-- (void)viewDidUnload
-{
-    [super viewDidUnload];
-    // Release any retained subviews of the main view.
-}
-
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
-{
-    return (interfaceOrientation != UIInterfaceOrientationPortraitUpsideDown);
-}
-
-- (void)insertNewObject:(id)sender
-{
-    if (!_objects) {
-        _objects = [[NSMutableArray alloc] init];
-    }
-    [_objects insertObject:[NSDate date] atIndex:0];
-    NSIndexPath *indexPath = [NSIndexPath indexPathForRow:0 inSection:0];
-    [self.tableView insertRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
+// Instagramの写真をロードする
+-(void)loadPhotos {    
+    NSURLRequest *req = [NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat: @"https://api.instagram.com/v1/media/popular?client_id=%@", INSTAGRAM_CLIENT_ID]]];
+    [NSURLConnection sendAsynchronousRequest:req queue:_networkQueue completionHandler:^(NSURLResponse *res, NSData *data, NSError *error) {        
+        NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+        _objects = [json valueForKeyPath:@"data"];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.tableView reloadData];
+        });
+    }];
 }
 
 #pragma mark - Table View
@@ -79,55 +80,37 @@
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
     if (cell == nil) {
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
-        cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
     }
 
-
-    NSDate *object = [_objects objectAtIndex:indexPath.row];
-    cell.textLabel.text = [object description];
+    NSDictionary *data = [_objects objectAtIndex:indexPath.row];
+    
+    // タイトルを挿入
+    NSString *text = [data valueForKeyPath:@"caption.text"];
+    cell.textLabel.text = [text description];
+    NSString *imageUrl = [data valueForKeyPath:@"images.standard_resolution.url"];    
+    
+    // キャッシュから取得
+    ImageLoader *imageLoader = [ImageLoader sharedInstance];    
+    UIImage *image = [imageLoader cacedImageForUrl:imageUrl];    
+    cell.imageView.image = image;
+    
+    if (!image) {        
+        // 画像をロード
+        [imageLoader loadImage:imageUrl completion:^(UIImage *image) {
+            [self reloadData];            
+        }];
+    }
     return cell;
 }
 
-- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    // Return NO if you do not want the specified item to be editable.
-    return YES;
-}
-
-- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    if (editingStyle == UITableViewCellEditingStyleDelete) {
-        [_objects removeObjectAtIndex:indexPath.row];
-        [tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationFade];
-    } else if (editingStyle == UITableViewCellEditingStyleInsert) {
-        // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view.
-    }
-}
-
-/*
-// Override to support rearranging the table view.
-- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath
-{
-}
-*/
-
-/*
-// Override to support conditional rearranging of the table view.
-- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    // Return NO if you do not want the item to be re-orderable.
-    return YES;
-}
-*/
-
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    if (!self.detailViewController) {
-        self.detailViewController = [[DetailViewController alloc] initWithNibName:@"DetailViewController" bundle:nil];
-    }
-    NSDate *object = [_objects objectAtIndex:indexPath.row];
-    self.detailViewController.detailItem = object;
-    [self.navigationController pushViewController:self.detailViewController animated:YES];
+-(void)reloadData {
+    NSBlockOperation *op = [NSBlockOperation blockOperationWithBlock:^{
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            [self.tableView reloadData];
+        });
+    }];
+    if (_reloadQueue.operations.count) return;
+    [_reloadQueue addOperation:op];
 }
 
 @end
