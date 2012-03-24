@@ -51,12 +51,11 @@ static NSString *INSTAGRAM_CLIENT_ID = @"";
 // Instagramの写真をロードする
 -(void)loadPhotos {    
     NSURLRequest *req = [NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat: @"https://api.instagram.com/v1/media/popular?client_id=%@", INSTAGRAM_CLIENT_ID]]];
+    __weak MasterViewController *_self = self;
     [NSURLConnection sendAsynchronousRequest:req queue:_networkQueue completionHandler:^(NSURLResponse *res, NSData *data, NSError *error) {        
         NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
         _objects = [json valueForKeyPath:@"data"];
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self.tableView reloadData];
-        });
+        [_self reloadData];
     }];
 }
 
@@ -96,17 +95,19 @@ static NSString *INSTAGRAM_CLIENT_ID = @"";
     
     if (!image) {        
         // 画像をロード
+        __weak MasterViewController *_self = self; // 循環参照よけ
         [imageLoader loadImage:imageUrl completion:^(UIImage *image) {
-            [self reloadData];            
+            [_self reloadData];            
         }];
     }
     return cell;
 }
 
 -(void)reloadData {
+    MasterViewController *_self = self;
     NSBlockOperation *op = [NSBlockOperation blockOperationWithBlock:^{
         dispatch_sync(dispatch_get_main_queue(), ^{
-            [self.tableView reloadData];
+            [_self.tableView reloadData];
         });
     }];
     if (_reloadQueue.operations.count) return;

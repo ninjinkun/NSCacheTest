@@ -33,7 +33,7 @@
         _requestingUrls = [[NSCache alloc] init]; // ただの便利なマルチスレッド用Dictionaryとして使っている
         
         _imageCache = [[NSCache alloc] init];
-//        _imageCache.countLimit = 15;
+        _imageCache.countLimit = 15;
 //        _imageCache.totalCostLimit = 640 * 480 * 10;
     }
     return self;
@@ -46,12 +46,15 @@
 -(void)loadImage:(NSString *)imageUrl completion:(void(^)(UIImage *image))completion {
     if ([_requestingUrls objectForKey:imageUrl]) return; // 既にリクエストされていればreturn
     [_requestingUrls setObject:@"lock" forKey:imageUrl];
+
     // 画像をロード
     NSURLRequest *req = [NSURLRequest requestWithURL:[NSURL URLWithString:imageUrl] cachePolicy:NSURLCacheStorageNotAllowed timeoutInterval:20];
 
-    __weak NSCache *weakedImageCache = _imageCache;
-    __weak NSCache *weakedRequestingUrl = _requestingUrls;
+    NSCache *weakedImageCache = _imageCache; // 循環参照よけ
+    NSCache *weakedRequestingUrl = _requestingUrls;
+
     [NSURLConnection sendAsynchronousRequest:req queue:_networkQueue completionHandler:^(NSURLResponse *res, NSData *imageData, NSError *error) {
+        [NSThread sleepForTimeInterval:0.1];
         UIImage *image = [UIImage imageWithData:imageData];        
         
         // キャッシュセット
