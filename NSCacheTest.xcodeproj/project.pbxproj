@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		268D69EC151D493600370677 /* ImageLoader.m in Sources */ = {isa = PBXBuildFile; fileRef = 268D69EB151D493600370677 /* ImageLoader.m */; };
+		268D69F6151D907C00370677 /* Twitter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 268D69F5151D907C00370677 /* Twitter.framework */; };
+		268D69F8151D90B700370677 /* Accounts.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 268D69F7151D90B700370677 /* Accounts.framework */; };
 		26E5BE53151BF4FD0075D924 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 26E5BE52151BF4FD0075D924 /* UIKit.framework */; };
 		26E5BE55151BF4FD0075D924 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 26E5BE54151BF4FD0075D924 /* Foundation.framework */; };
 		26E5BE57151BF4FD0075D924 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 26E5BE56151BF4FD0075D924 /* CoreGraphics.framework */; };
@@ -21,6 +23,8 @@
 /* Begin PBXFileReference section */
 		268D69EA151D493600370677 /* ImageLoader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ImageLoader.h; sourceTree = "<group>"; };
 		268D69EB151D493600370677 /* ImageLoader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ImageLoader.m; sourceTree = "<group>"; };
+		268D69F5151D907C00370677 /* Twitter.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Twitter.framework; path = System/Library/Frameworks/Twitter.framework; sourceTree = SDKROOT; };
+		268D69F7151D90B700370677 /* Accounts.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accounts.framework; path = System/Library/Frameworks/Accounts.framework; sourceTree = SDKROOT; };
 		26E5BE4E151BF4FD0075D924 /* NSCacheTest.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NSCacheTest.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		26E5BE52151BF4FD0075D924 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		26E5BE54151BF4FD0075D924 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -41,6 +45,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				268D69F8151D90B700370677 /* Accounts.framework in Frameworks */,
+				268D69F6151D907C00370677 /* Twitter.framework in Frameworks */,
 				26E5BE53151BF4FD0075D924 /* UIKit.framework in Frameworks */,
 				26E5BE55151BF4FD0075D924 /* Foundation.framework in Frameworks */,
 				26E5BE57151BF4FD0075D924 /* CoreGraphics.framework in Frameworks */,
@@ -70,6 +76,8 @@
 		26E5BE51151BF4FD0075D924 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				268D69F7151D90B700370677 /* Accounts.framework */,
+				268D69F5151D907C00370677 /* Twitter.framework */,
 				26E5BE52151BF4FD0075D924 /* UIKit.framework */,
 				26E5BE54151BF4FD0075D924 /* Foundation.framework */,
 				26E5BE56151BF4FD0075D924 /* CoreGraphics.framework */,

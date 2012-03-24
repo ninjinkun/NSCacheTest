@@ -7,6 +7,8 @@
 //
 
 #import "MasterViewController.h"
+#import <Twitter/Twitter.h>
+#import <Accounts/Accounts.h>
 #import "ImageLoader.h"
 
 static NSString *INSTAGRAM_CLIENT_ID = @"";
@@ -20,13 +22,11 @@ static NSString *INSTAGRAM_CLIENT_ID = @"";
 
 @implementation MasterViewController
 
-@synthesize detailViewController = _detailViewController;
-
 - (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
 {
     self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
     if (self) {
-        self.title = @"Instagram";
+        self.title = @"NSCacheTest";
         _networkQueue = [[NSOperationQueue alloc] init];
         _reloadQueue = [[NSOperationQueue alloc] init];
         _reloadQueue.maxConcurrentOperationCount = 1;
@@ -42,14 +42,32 @@ static NSString *INSTAGRAM_CLIENT_ID = @"";
         @throw [NSException exceptionWithName:@"Instgram Client ID Not Found" reason:@"Get Instgram ID via http://instagr.am/developer/manage/" userInfo:nil];
     }    
     
-    UIBarButtonItem *loadButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemRefresh target:self action:@selector(loadPhotos)];
-    self.navigationItem.rightBarButtonItem = loadButton;
+    UIBarButtonItem *twitterButton = [[UIBarButtonItem alloc] initWithTitle:@"Twitter" style:UIBarButtonItemStyleBordered target:self action:@selector(loadTwitterTimeline)];    
+    self.navigationItem.rightBarButtonItem = twitterButton;
 
-    [self loadPhotos];
+    UIBarButtonItem *instagramButton = [[UIBarButtonItem alloc] initWithTitle:@"Instagram" style:UIBarButtonItemStyleBordered target:self action:@selector(loadInstagramPhotos)];    
+    self.navigationItem.leftBarButtonItem = instagramButton;
+}
+
+-(void)loadTwitterTimeline {    ACAccountStore *accountStore = [[ACAccountStore alloc] init];
+    ACAccountType *accountType = [accountStore accountTypeWithAccountTypeIdentifier:ACAccountTypeIdentifierTwitter];
+    __weak MasterViewController *_self = self;
+    [accountStore requestAccessToAccountsWithType:accountType withCompletionHandler:^(BOOL granted, NSError *error) {
+        if (error) return;        
+        ACAccount *twitterAccount = [[accountStore accountsWithAccountType:accountType] objectAtIndex:0];
+        NSDictionary *param = [NSDictionary dictionaryWithObjectsAndKeys:@"200", @"count", nil];
+        TWRequest *req = [[TWRequest alloc] initWithURL:[NSURL URLWithString:@"http://api.twitter.com/1/statuses/home_timeline.json"] parameters:param requestMethod:TWRequestMethodGET];
+        req.account = twitterAccount;                
+        [req performRequestWithHandler:^(NSData *responseData, NSHTTPURLResponse *urlResponse, NSError *error) {
+            NSArray *json = [NSJSONSerialization JSONObjectWithData:responseData options:0 error:nil];
+            _objects = json;
+            [_self reloadData];        
+        }];
+    }];      
 }
 
 // Instagramの写真をロードする
--(void)loadPhotos {    
+-(void)loadInstagramPhotos {    
     NSURLRequest *req = [NSURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat: @"https://api.instagram.com/v1/media/popular?client_id=%@", INSTAGRAM_CLIENT_ID]]];
     __weak MasterViewController *_self = self;
     [NSURLConnection sendAsynchronousRequest:req queue:_networkQueue completionHandler:^(NSURLResponse *res, NSData *data, NSError *error) {        
@@ -84,9 +102,22 @@ static NSString *INSTAGRAM_CLIENT_ID = @"";
     NSDictionary *data = [_objects objectAtIndex:indexPath.row];
     
     // タイトルを挿入
-    NSString *text = [data valueForKeyPath:@"caption.text"];
+    
+    NSString *text;
+    NSString *imageUrl;
+
+    if ([data objectForKey:@"text"]) { // isTwitter
+        text = [data objectForKey:@"text"];
+        imageUrl = [data valueForKeyPath:@"user.profile_image_url"];
+    }
+    else {
+        text = [data valueForKeyPath:@"caption.text"];
+        imageUrl = [data valueForKeyPath:@"images.standard_resolution.url"];    
+    }
     cell.textLabel.text = [text description];
-    NSString *imageUrl = [data valueForKeyPath:@"images.standard_resolution.url"];    
+    
+    
+    
     
     // キャッシュから取得
     ImageLoader *imageLoader = [ImageLoader sharedInstance];    

@@ -33,7 +33,7 @@
         _requestingUrls = [[NSCache alloc] init]; // ただの便利なマルチスレッド用Dictionaryとして使っている
         
         _imageCache = [[NSCache alloc] init];
-        _imageCache.countLimit = 15;
+//        _imageCache.countLimit = 20;
 //        _imageCache.totalCostLimit = 640 * 480 * 10;
     }
     return self;
@@ -54,7 +54,7 @@
     NSCache *weakedRequestingUrl = _requestingUrls;
 
     [NSURLConnection sendAsynchronousRequest:req queue:_networkQueue completionHandler:^(NSURLResponse *res, NSData *imageData, NSError *error) {
-        [NSThread sleepForTimeInterval:0.1];
+//        [NSThread sleepForTimeInterval:0.5];
         UIImage *image = [UIImage imageWithData:imageData];        
         
         // キャッシュセット
